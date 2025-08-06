@@ -30,7 +30,16 @@ DRIVER.set_page_load_timeout(20)
 
 
 class MBdata:
-    def __init__(self, bank_sitemap):
+    """
+    Class to extract, parse, and clean loan-related data from the Bank of Maharashtra website.
+    """
+    def __init__(self, bank_sitemap: str):
+        """
+        Initialize the MBdata class.
+
+        Args:
+            bank_sitemap (str): URL of the bank's sitemap.
+        """
         self.bank_sitemap = bank_sitemap
         # self.all_dirs = self.get_sitemap_loan_urls(bank_sitemap)
         self.all_dirs = ["https://bankofmaharashtra.in/retail-loans"]
@@ -39,6 +48,9 @@ class MBdata:
         self.cleaned_documents = []
 
     def get_sitemap_loan_urls(self):
+        """
+        Extract loan-related directory URLs from the sitemap.
+        """
         sitemap_soup = BeautifulSoup(requests.get(self.bank_sitemap).content, "lxml")
         loc_paths = sitemap_soup.find_all("loc")
         self.all_dirs = [
@@ -48,6 +60,9 @@ class MBdata:
         print(f"[+] total loan dir urls fetched -- {len(self.all_dirs)}")
 
     def get_loan_urls(self):
+        """
+        Visit loan-related directory pages and collect all loan content URLs.
+        """
         for dir_url in self.all_dirs:
             DRIVER.get(dir_url)
             time.sleep(2)
@@ -63,6 +78,12 @@ class MBdata:
 
     @staticmethod
     def parse_for_data():
+        """
+        Parse the loaded webpage for data either via tabs or tables.
+
+        Returns:
+            dict: Parsed data from tabbed content or tables.
+        """
         all_text = {}
         for name, tab_id in TAB_IDS_MAPPING.items():
             try:
@@ -94,6 +115,9 @@ class MBdata:
         return all_text
 
     def get_page_data(self):
+        """
+        Iterate over all content URLs, parse and clean each page, and store both raw and cleaned data.
+        """
         for page_url in tqdm(self.all_locs):
             print(f"[+] fecthing data from: {page_url}")
             try:
@@ -115,6 +139,13 @@ class MBdata:
 
     @staticmethod
     def save_json_data(file_name, json_data):
+        """
+        Save given JSON data to a file.
+
+        Args:
+            file_name (str): Name of the file.
+            json_data (list[dict]): JSON serializable data to be saved.
+        """
         try:
             with open(file_name, "w") as f:
                 json.dump(json_data, f)
@@ -124,6 +155,15 @@ class MBdata:
 
     @staticmethod
     def get_cleaned_data(input_text):
+        """
+        Send raw text to LLaMA API and receive cleaned, structured response.
+
+        Args:
+            input_text (dict): Raw extracted text from the webpage.
+
+        Returns:
+            str: Cleaned and structured JSON text from LLaMA API.
+        """
         prompt = CLEAN_DATA_PROMPT.replace("{input_text}", json.dumps(input_text))
         results = llama_api_call(prompt, response_format={"type": "json_object"})
         match_ = re.search(r'\{[\s\S]*\}', results)
