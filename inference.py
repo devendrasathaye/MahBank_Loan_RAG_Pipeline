@@ -9,6 +9,12 @@ FAISS_DB = FAISS.load_local("data/faiss_index", embedding_model, allow_dangerous
 
 
 def chat_agent():
+    """
+    Interactive CLI chatbot agent that uses a FAISS vector index
+    and a LLaMA API call to generate responses to user questions.
+    """
+    print("=== AI Loan Chat Agent ===")
+    print("Type your question below. Type 'exit' to quit.\n")
     while True:
         question = input('question : ')
         if question == 'exit':
